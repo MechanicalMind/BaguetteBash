@@ -1,0 +1,769 @@
+settings
+{
+	main
+	{
+		Description: "== Baguete Bash: Bagel Boops == Use your bash and boop to become the last one standing in this chaotic arena fight for 2-12 players. Shielding for longer than 3 seconds will stun you. Charge your ultimate in the overtime capture point and unleash map-wide damage. By MechanicalMind | v1.0"
+	}
+
+	lobby
+	{
+		Allow Players Who Are In Queue: Yes
+		Match Voice Chat: Enabled
+	}
+
+	modes
+	{
+		Deathmatch
+		{
+			Game Length In Minutes: 15
+			Score To Win: 10
+
+			enabled maps
+			{
+				Volskaya Industries
+			}
+		}
+
+		General
+		{
+			Allow Hero Switching: Off
+			Game Mode Start: Immediately
+			Hero Limit: Off
+			Spawn Health Packs: Disabled
+		}
+	}
+
+	heroes
+	{
+		General
+		{
+			Ultimate Generation - Combat: 0%
+			Ultimate Generation - Passive: 0%
+
+			Brigitte
+			{
+				Barrier Shield Cooldown Time: 300%
+				Barrier Shield Recharge Rate: 5%
+				Healing Received: 50%
+				Movement Gravity: 80%
+				Primary Fire: Off
+				Quick Melee: Off
+				Repair Pack: Off
+				Shield Bash Cooldown Time: 30%
+				Shield Bash Knockback Scalar: 300%
+				Ultimate Ability Rally: Off
+				Whip Shot Cooldown Time: 50%
+				Whip Shot Knockback Scalar: 200%
+			}
+
+			Genji
+			{
+				Movement Speed: 300%
+			}
+
+			enabled heroes
+			{
+				Brigitte
+			}
+		}
+	}
+}
+
+variables
+{
+	global:
+		5: RoundState
+		6: RoundTimeStart
+
+	player:
+		1: ShieldsUpTimeStart
+		3: ShieldsUp
+}
+
+rule("start game ( f = round state, g = round state start time, h = capture point )")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Disable Built-In Game Mode Scoring;
+		Set Global Variable(RoundState, 0);
+		Set Global Variable(W, 0);
+		Set Global Variable(RoundTimeStart, Total Time Elapsed);
+		Set Global Variable(H, Null);
+		Set Global Variable(I, Empty Array);
+	}
+}
+
+rule("player start ( p.c = damager, p.e = ?, p.a = lava hurts, p.g = group up )")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	actions
+	{
+		Enable Death Spectate All Players(Event Player);
+		Enable Death Spectate Target HUD(Event Player);
+		Set Player Variable(Event Player, E, False);
+		Disable Built-In Game Mode Respawning(Event Player);
+	}
+}
+
+rule("set bubbles positions? ( a = lava )")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Set Global Variable(A, Vector(-85, -199, 40));
+		Modify Global Variable(A, Append To Array, Vector(-105, -199, 60));
+		Modify Global Variable(A, Append To Array, Vector(-35, -199.500, 68));
+		Modify Global Variable(A, Append To Array, Vector(-70, -199, 90));
+		Modify Global Variable(A, Append To Array, Vector(-4, -199, 102));
+		Modify Global Variable(A, Append To Array, Vector(0, -199, 71));
+	}
+}
+
+rule("set spawns ( b = spawns )")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Set Global Variable(B, Vector(-113.698, 3.218, 72.804));
+		Modify Global Variable(B, Append To Array, Vector(-108.065, 3.218, 52.581));
+		Modify Global Variable(B, Append To Array, Vector(-96.320, 3.218, 33.096));
+		Modify Global Variable(B, Append To Array, Vector(-81.151, 3.218, 42.896));
+		Modify Global Variable(B, Append To Array, Vector(-89.563, 3.218, 67.874));
+		Modify Global Variable(B, Append To Array, Vector(-102.913, 3.218, 78.012));
+		Modify Global Variable(B, Append To Array, Vector(-60.806, 3.218, 86.057));
+		Modify Global Variable(B, Append To Array, Vector(-66.782, 3.218, 93.660));
+		Modify Global Variable(B, Append To Array, Vector(-44.285, 3.218, 95.296));
+		Modify Global Variable(B, Append To Array, Vector(-29.337, 3.218, 98.108));
+		Modify Global Variable(B, Append To Array, Vector(-33.495, 3.218, 73.366));
+		Modify Global Variable(B, Append To Array, Vector(1.799, 3.502, 95.447));
+		Modify Global Variable(B, Append To Array, Vector(-67.985, 4.097, 44.717));
+		Modify Global Variable(B, Append To Array, Vector(-26.381, 3.895, 89.777));
+		Modify Global Variable(B, Append To Array, Vector(-31.355, 3.598, 85.068));
+		Modify Global Variable(B, Append To Array, Vector(-107.650, 3.597, 61.241));
+		Modify Global Variable(B, Append To Array, Vector(-72.060, 4.099, 51.164));
+		Modify Global Variable(B, Append To Array, Vector(-9.153, 2.848, 77.922));
+		Modify Global Variable(B, Append To Array, Vector(-9.178, 2.597, 107.621));
+		Modify Global Variable(B, Append To Array, Vector(-19.119, 2.598, 107.271));
+		Modify Global Variable(B, Append To Array, Vector(15.504, 3.597, 93.865));
+	}
+}
+
+rule("increase visual acuity")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Create Effect(All Players(All Teams), Sphere, Red, Value In Array(Global Variable(A), 0), 200, Visible To Position and Radius);
+		Create Effect(All Players(All Teams), Sphere, Red, Value In Array(Global Variable(A), 1), 200, Visible To Position and Radius);
+		Create Effect(All Players(All Teams), Sphere, Red, Value In Array(Global Variable(A), 2), 200, Visible To Position and Radius);
+		Create Effect(All Players(All Teams), Sphere, Red, Value In Array(Global Variable(A), 3), 200, Visible To Position and Radius);
+		Create Effect(All Players(All Teams), Sphere, Red, Value In Array(Global Variable(A), 4), 200, Visible To Position and Radius);
+		Create Effect(All Players(All Teams), Sphere, Red, Value In Array(Global Variable(A), 5), 200, Visible To Position and Radius);
+		Create Effect(Filtered Array(All Players(All Teams), Compare(Global Variable(H), !=, Null)), Ring, Yellow, Global Variable(H), 5,
+			Visible To Position and Radius);
+		Create Effect(Filtered Array(All Players(All Teams), Compare(Global Variable(H), !=, Null)), Sparkles, Yellow, Add(Global Variable(
+			H), Vector(0, -1, 0)), 6, Visible To Position and Radius);
+		Create Icon(Filtered Array(All Players(All Teams), And(Compare(Global Variable(H), !=, Null), Compare(Distance Between(
+			Current Array Element, Global Variable(H)), >=, 7))), Global Variable(H), Flag, Visible To and Position, Yellow, True);
+		Create HUD Text(Filtered Array(All Players(All Teams), Compare(Count Of(Global Variable(I)), ==, 1)), String("{0}: {1}", String(
+			"{0} {1}", Hero Icon String(Hero Of(First Of(Global Variable(I)))), First Of(Global Variable(I)), Null), String("{0}%",
+			Ultimate Charge Percent(First Of(Global Variable(I))), Null, Null), Null), Null, Null, Top, 3, Yellow, White, White,
+			Visible To and String, Default Visibility);
+		Create HUD Text(Filtered Array(All Players(All Teams), Compare(Count Of(Global Variable(I)), >, 1)), String("{0} {1}", String(
+			"Point", Null, Null, Null), String("Locked", Null, Null, Null), Null), Null, Null, Top, 3, Yellow, White, White,
+			Visible To and String, Default Visibility);
+	}
+}
+
+rule("Help, it hurts ( p.c = last attacker )")
+{
+	event
+	{
+		Player Dealt Damage;
+		All;
+		All;
+	}
+
+	actions
+	{
+		Set Player Variable(Victim, C, Attacker);
+	}
+}
+
+rule("burn baby burn!")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Distance Between(First Of(Sorted Array(Global Variable(A), Distance Between(Position Of(Event Player), Current Array Element))),
+			Position Of(Event Player)) <= 199.500;
+		Is Alive(Event Player) == True;
+		Has Spawned(Event Player) == True;
+		Player Variable(Event Player, A) == True;
+		Is In Setup == False;
+	}
+
+	actions
+	{
+		Set Status(Event Player, Player Variable(Event Player, C), Burning, 9999);
+		Start Damage Over Time(Event Player, Player Variable(Event Player, C), 9999, 200);
+	}
+}
+
+rule("cease the burning!")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Alive(Event Player) == False;
+	}
+
+	actions
+	{
+		Set Player Variable(Event Player, A, False);
+		Stop All Damage Over Time(Event Player);
+		Clear Status(Event Player, Burning);
+		Set Player Variable(Event Player, C, Null);
+		Set Player Variable(Event Player, R, 0);
+		Set Ultimate Ability Enabled(Event Player, False);
+		Set Ultimate Charge(Event Player, 0);
+		Set Player Variable(Event Player, E, False);
+	}
+}
+
+rule("no, not there")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Alive(Event Player) == True;
+		Has Spawned(Event Player) == True;
+		Player Variable(Event Player, A) != True;
+	}
+
+	actions
+	{
+		Teleport(Event Player, Random Value In Array(Global Variable(B)));
+		Apply Impulse(Event Player, Multiply(-1, Velocity Of(Event Player)), 1, To World, Cancel Contrary Motion);
+		Wait(1, Ignore Condition);
+		Set Player Variable(Event Player, A, True);
+	}
+}
+
+rule("Shields up? ( p.b = shield time, p.d = holding shield )")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Secondary Fire) == True;
+		Global Variable(RoundState) >= 1;
+	}
+
+	actions
+	{
+		Set Player Variable(Event Player, ShieldsUpTimeStart, Total Time Elapsed);
+		Set Player Variable(Event Player, ShieldsUp, True);
+	}
+}
+
+rule("No, shields down!")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Secondary Fire) == True;
+		Player Variable(Event Player, ShieldsUpTimeStart) <= Subtract(Total Time Elapsed, 3);
+		Global Variable(RoundState) >= 1;
+	}
+
+	actions
+	{
+		Set Status(Event Player, Null, Stunned, 1);
+		Set Player Variable(Event Player, ShieldsUpTimeStart, Total Time Elapsed);
+	}
+}
+
+rule("spam tastes bad")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Secondary Fire) == False;
+		Player Variable(Event Player, ShieldsUp) == True;
+		Global Variable(RoundState) >= 1;
+	}
+
+	actions
+	{
+		Set Secondary Fire Enabled(Event Player, False);
+		Wait(0.300, Ignore Condition);
+		Set Secondary Fire Enabled(Event Player, True);
+	}
+}
+
+rule("^#@&%, what happened?")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Count Of(Filtered Array(All Players(All Teams), Compare(Player Variable(Current Array Element, E), ==, True))) == 0;
+		Global Variable(RoundState) > 0;
+	}
+
+	actions
+	{
+		Set Global Variable(RoundState, 0);
+		Set Global Variable(H, Null);
+		Set Global Variable(I, Empty Array);
+	}
+}
+
+rule("who's da boss?")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Count Of(Filtered Array(All Living Players(All Teams), Compare(Player Variable(Current Array Element, E), ==, True))) == 1;
+		Count Of(Filtered Array(All Players(All Teams), Has Spawned(Current Array Element))) >= 2;
+		Global Variable(RoundState) >= 1;
+	}
+
+	actions
+	{
+		Set Global Variable(RoundState, -1);
+		Set Global Variable(Z, First Of(Filtered Array(All Living Players(All Teams), Compare(Player Variable(Current Array Element, E),
+			==, True))));
+		Big Message(All Players(All Teams), String("{0} {1} {2}", Hero Icon String(Hero Of(Global Variable(Z))), Global Variable(Z),
+			String("Wins", Null, Null, Null)));
+		Modify Player Score(Global Variable(Z), 1);
+		Set Global Variable(H, Null);
+		Set Global Variable(I, Empty Array);
+		Wait(3, Ignore Condition);
+		Set Global Variable(RoundState, 0);
+	}
+}
+
+rule("create jump effect")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Create Effect(All Players(All Teams), Sphere, Purple, Vector(-67, 2, 52), 1, Visible To Position and Radius);
+		Create Effect(All Players(All Teams), Sphere, Purple, Vector(-11, 1, 75), 1, Visible To Position and Radius);
+		Create Effect(All Players(All Teams), Sphere, Purple, Vector(-47, -0.500, 74), 1, Visible To Position and Radius);
+	}
+}
+
+rule("the round will start ( p.f = has spawned )")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Count Of(Filtered Array(All Players(All Teams), Has Spawned(Current Array Element))) >= 2;
+		Global Variable(RoundState) == 0;
+	}
+
+	actions
+	{
+		Big Message(All Players(All Teams), String("Start", Null, Null, Null));
+		Clear Status(All Players(All Teams), Burning);
+		Stop All Damage Over Time(All Players(All Teams));
+		Heal(All Living Players(All Teams), Null, 500);
+		Teleport(All Living Players(All Teams), Random Value In Array(Global Variable(B)));
+		Respawn(All Dead Players(All Teams));
+		Set Player Variable(All Players(All Teams), A, False);
+		Set Player Variable(All Players(All Teams), C, Null);
+		Start Forcing Throttle(All Players(All Teams), 0, 0, 0, 0, 0, 0);
+		Set Ability 1 Enabled(All Players(All Teams), False);
+		Set Secondary Fire Enabled(All Players(All Teams), False);
+		Set Player Variable(All Players(All Teams), R, 0);
+		Set Ultimate Ability Enabled(All Players(All Teams), False);
+		Set Ultimate Charge(All Players(All Teams), 0);
+		Set Global Variable(H, Null);
+		Set Global Variable(I, Empty Array);
+		Set Player Variable(All Players(All Teams), E, True);
+		Wait(3, Ignore Condition);
+		Stop Forcing Throttle(All Players(All Teams));
+		Set Secondary Fire Enabled(All Players(All Teams), True);
+		Set Global Variable(RoundState, 1);
+		Set Global Variable(RoundTimeStart, Total Time Elapsed);
+		Wait(0.100, Ignore Condition);
+		Set Ability 1 Enabled(All Players(All Teams), True);
+	}
+}
+
+rule("quick assemble")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Is Assembling Heroes == True;
+	}
+
+	actions
+	{
+		Set Match Time(10);
+	}
+}
+
+rule("how long was this supposed to last again?")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Is Game In Progress == True;
+	}
+
+	actions
+	{
+		Wait(0.250, Ignore Condition);
+		Set Match Time(1800);
+	}
+}
+
+disabled rule("debug text")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	actions
+	{
+		Create HUD Text(Event Player, String("Pick", Null, Null, Null), Position Of(Event Player), Direction From Angles(
+			Horizontal Facing Angle Of(Event Player), Vertical Facing Angle Of(Event Player)), Left, 0, Blue, White, White,
+			Visible To and String, Default Visibility);
+		Create HUD Text(Event Player, String("Danger", Null, Null, Null), Null, First Of(Sorted Array(Global Variable(A), Distance Between(
+			Event Player, Current Array Element))), Left, 1, Purple, White, White, Visible To and String, Default Visibility);
+		Create HUD Text(Event Player, String("Spawn", Null, Null, Null), Null, First Of(Sorted Array(Global Variable(B), Distance Between(
+			Event Player, Current Array Element))), Left, 2, Green, White, White, Visible To and String, Default Visibility);
+	}
+}
+
+disabled rule("wait, where were the spawns again? ( w = loop index )")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global Variable(W) < Count Of(Global Variable(B));
+	}
+
+	actions
+	{
+		Create Icon(All Players(All Teams), Value In Array(Global Variable(B), Global Variable(W)), Arrow: Down, Visible To, White, True);
+		Modify Global Variable(W, Add, 1);
+		Wait(0.250, Ignore Condition);
+		Loop If Condition Is True;
+	}
+}
+
+rule("jump pad")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Distance Between(Position Of(Event Player), Vector(-67, 2, 52)) <= 1;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Multiply(-1, Velocity Of(Event Player)), 1, To World, Cancel Contrary Motion);
+		Start Forcing Throttle(Event Player, 0, 0, 0, 0, 0, 0);
+		Play Effect(All Players(All Teams), Explosion Sound, White, Event Player, 150);
+		Apply Impulse(Event Player, Vector(0.710, 0.120, 0.700), 48, To World, Cancel Contrary Motion);
+		Wait(1, Ignore Condition);
+		Stop Forcing Throttle(Event Player);
+	}
+}
+
+rule("jump pad 2")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Distance Between(Position Of(Event Player), Vector(-11, 1, 75)) <= 1;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Multiply(-1, Velocity Of(Event Player)), 1, To World, Cancel Contrary Motion);
+		Start Forcing Throttle(Event Player, 0, 0, 0, 0, 0, 0);
+		Play Effect(All Players(All Teams), Explosion Sound, White, Event Player, 150);
+		Apply Impulse(Event Player, Vector(-0.910, 0.400, -0.120), 50, To World, Cancel Contrary Motion);
+		Wait(2.500, Ignore Condition);
+		Stop Forcing Throttle(Event Player);
+	}
+}
+
+rule("jump pad 3")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Distance Between(Position Of(Event Player), Vector(-47, -0.500, 74)) <= 1;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Multiply(-1, Velocity Of(Event Player)), 1, To World, Cancel Contrary Motion);
+		Start Forcing Throttle(Event Player, 0, 0, 0, 0, 0, 0);
+		Play Effect(All Players(All Teams), Explosion Sound, White, Event Player, 150);
+		Apply Impulse(Event Player, Vector(-0.070, 0.500, 0.860), 27, To World, Cancel Contrary Motion);
+		Wait(1, Ignore Condition);
+		Stop Forcing Throttle(Event Player);
+	}
+}
+
+rule("can rally be acquired?")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global Variable(RoundState) == 1;
+		Number of Living Players(All Teams) >= 2;
+		Total Time Elapsed >= Add(Global Variable(RoundTimeStart), 45);
+	}
+
+	actions
+	{
+		Set Global Variable(RoundState, 3);
+		Set Global Variable(RoundTimeStart, Total Time Elapsed);
+		Set Global Variable(H, Random Value In Array(Global Variable(B)));
+		Big Message(All Players(All Teams), String("{0} {1} {2}", String("Capture", Null, Null, Null), String("Point", Null, Null, Null),
+			String("Started", Null, Null, Null)));
+		Set Ultimate Ability Enabled(All Living Players(All Teams), True);
+	}
+}
+
+rule("wait, is this bridge king?")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global Variable(RoundState) == 3;
+		Global Variable(H) != Null;
+		Global Variable(I) != Filtered Array(All Living Players(All Teams), And(Compare(Distance Between(Current Array Element,
+			Global Variable(H)), <=, 5), True));
+	}
+
+	actions
+	{
+		Set Global Variable(I, Filtered Array(All Living Players(All Teams), And(Compare(Distance Between(Current Array Element,
+			Global Variable(H)), <=, 5), True)));
+		Wait(0.100, Ignore Condition);
+		Loop If Condition Is True;
+	}
+}
+
+rule("upwards we go")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global Variable(RoundState) == 3;
+		Global Variable(H) != Null;
+		Count Of(Global Variable(I)) == 1;
+		Count Of(Filtered Array(All Players(All Teams), Is Using Ultimate(Current Array Element))) == 0;
+	}
+
+	actions
+	{
+		Wait(0.250, Abort When False);
+		Set Ultimate Charge(First Of(Global Variable(I)), Add(Ultimate Charge Percent(First Of(Global Variable(I))), 1));
+		Loop If Condition Is True;
+	}
+}
+
+rule("there can only be one")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global Variable(RoundState) == 3;
+		Is Using Ultimate(Event Player) == True;
+	}
+
+	actions
+	{
+		Damage(Filtered Array(All Living Players(All Teams), Compare(Current Array Element, !=, Event Player)), Event Player, 14);
+		Wait(0.500, Ignore Condition);
+		Loop If Condition Is True;
+	}
+}
+
+rule("I can't kill you if you're over there")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Communicating(Event Player, Group Up) == True;
+		Is Alive(Event Player) == True;
+	}
+
+	actions
+	{
+		Create Icon(All Players(All Teams), Add(Vector(0, 1.500, 0), Position Of(Event Player)), Exclamation Mark, Visible To, Red, False);
+		Set Player Variable At Index(Event Player, G, 0, Last Created Entity);
+		Create Effect(All Players(All Teams), Ring, Red, Add(Vector(0, 0, 0), Position Of(Event Player)), 1, Visible To);
+		Set Player Variable At Index(Event Player, G, 1, Last Created Entity);
+		Wait(7, Ignore Condition);
+		Destroy Icon(Value In Array(Player Variable(Event Player, G), 0));
+		Destroy Effect(Value In Array(Player Variable(Event Player, G), 1));
+		Set Player Variable(Event Player, G, Null);
+	}
+}
+
+rule("patience is a virtue")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Global Variable(RoundState) > 0;
+		Player Variable(Event Player, E) == False;
+		Is Alive(Event Player) == True;
+		Has Spawned(Event Player) == True;
+	}
+
+	actions
+	{
+		Kill(Event Player, Null);
+		Small Message(Event Player, String("{0} {1}", String("Spawning", Null, Null, Null), String("Next Round", Null, Null, Null), Null));
+	}
+}
